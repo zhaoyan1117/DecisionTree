@@ -11,6 +11,6 @@ def iterator_with_progress(n):
             last_percent = cur_percent
             stdout.write('\r' + cursor * cur_percent + " %d%%" % cur_percent)
             if cur_percent == 100:
-	            stdout.write('\n')
+                stdout.write('\n')
             stdout.flush()
         yield i
