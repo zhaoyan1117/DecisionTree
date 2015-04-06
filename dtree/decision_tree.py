@@ -4,7 +4,6 @@ from __future__ import division
 import numpy as np
 from scipy.stats import mode
 
-from ._leaf_node import LeafNode
 from ._node import Node
 from .util import iterator_with_progress
 
@@ -38,31 +37,30 @@ class DecisionTree:
 
     def _predict_single(self, datum):
         cur_node = self._root
-        while not isinstance(cur_node, LeafNode):
+        while not cur_node.is_leaf:
             cur_node = cur_node.get_child(datum)
         return cur_node.label
 
     def _generate_node(self, data, labels, cur_depth):
         if self._terminate(data, labels, cur_depth):
-            return self._generate_leaf_node(labels)
+            return self._generate_leaf_node(cur_depth, labels)
         else:
             sr, left_indices, right_indices = self._segmentor(data, labels, self._impurity)
 
             if not sr:
-                return self._generate_leaf_node(labels)
+                return self._generate_leaf_node(cur_depth, labels)
 
             left_data, left_labels = data[left_indices], labels[left_indices]
             right_data, right_labels = data[right_indices], labels[right_indices]
 
-            next_depth = cur_depth + 1
+            return Node(cur_depth, mode(labels)[0][0],
+                        split_rules=sr,
+                        left_child=self._generate_node(left_data, left_labels, cur_depth+1),
+                        right_child=self._generate_node(right_data, right_labels, cur_depth+1),
+                        is_leaf=False)
 
-            node = Node(sr, cur_depth,
-                        self._generate_node(left_data, left_labels, next_depth),
-                        self._generate_node(right_data, right_labels, next_depth))
-            return node
-
-    def _generate_leaf_node(self, labels):
-        return LeafNode(mode(labels)[0][0])
+    def _generate_leaf_node(self, cur_depth, labels):
+        return Node(cur_depth, mode(labels)[0][0], is_leaf=True)
 
     def _terminate(self, data, labels, cur_depth):
         if self._max_depth != None and cur_depth == self._max_depth:
