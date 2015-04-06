@@ -9,10 +9,10 @@ from util import iterator_with_progress
 
 class DecisionTree:
 
-    def __init__(self, impurity, segmentor, **params):
+    def __init__(self, impurity, segmentor, **kwargs):
         self._impurity = impurity
         self._segmentor = segmentor
-        self._max_depth = params.get('max_depth', None)
+        self._max_depth = kwargs.get('max_depth', None)
         self._root = None
 
     def train(self, data, labels):
@@ -34,7 +34,7 @@ class DecisionTree:
         return cur_node.label
 
     def _generate_node(self, data, labels, cur_depth):
-        if self._max_depth != None and cur_depth == self._max_depth:
+        if self._terminate(data, labels, cur_depth):
             return self._generate_leaf_node(labels)
         else:
             sr, left_indices, right_indices = self._segmentor(data, labels, self._impurity)
@@ -48,3 +48,12 @@ class DecisionTree:
 
     def _generate_leaf_node(self, labels):
         return LeafNode(mode(labels)[0][0])
+
+    def _terminate(self, data, labels, cur_depth):
+        if self.max_depth != None and cur_depth == self._max_depth:
+            # max depth reached
+            return True
+        elif np.unique(labels).size == 1:
+            return True
+        else:
+            return False
