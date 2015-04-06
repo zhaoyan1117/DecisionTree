@@ -12,7 +12,7 @@ class DecisionTree:
         self._impurity = impurity
         self._segmentor = segmentor
         self._max_depth = kwargs.get('max_depth', None)
-        self._min_points = kwargs.get('min_points', None)
+        self._min_samples = kwargs.get('min_samples', 2)
         self._root = None
         self._nodes = []
         self._prunned_nodes = []
@@ -87,10 +87,10 @@ class DecisionTree:
 
     def _terminate(self, data, labels, cur_depth):
         if self._max_depth != None and cur_depth == self._max_depth:
-            # max depth reached
+            # maximum depth reached.
             return True
-        elif self._min_points != None and labels.size < self._min_points:
-            # min depth reached
+        elif labels.size < self._min_samples:
+            # minimum number of samples reached.
             return True
         elif np.unique(labels).size == 1:
             return True
