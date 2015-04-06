@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 import numpy as np
-from scipy.stats import itemfreq
 from scipy.stats import mode
 
 from _leaf_node import LeafNode
