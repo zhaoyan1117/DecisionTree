@@ -5,13 +5,6 @@ import numpy as np
 from math import log
 
 class Entropy:
-    def _cal_entropy(self, bincount, total):
-        entropy = 0.0
-        for count in bincount:
-            freq = count/total
-            entropy -= freq * log(freq, 2)
-        print 'entropy: ' + str(entropy)
-        return entropy
 
     def __call__(self, left_label_hist, right_label_hist):
         left_bincount, right_bincount = left_label_hist[:,1], right_label_hist[:,1]
@@ -23,3 +16,10 @@ class Entropy:
         total = left_total + right_total
 
         return (left_total/total) * left_entropy + (right_total/total) * right_entropy
+
+    def _cal_entropy(self, bincount, total):
+        entropy = 0.0
+        for count in bincount:
+            freq = count/total
+            entropy -= freq * log(freq, 2)
+        return entropy

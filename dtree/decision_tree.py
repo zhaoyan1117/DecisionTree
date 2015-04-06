@@ -1,11 +1,12 @@
 from __future__ import absolute_import
+from __future__ import division
 
 import numpy as np
 from scipy.stats import mode
 
-from _leaf_node import LeafNode
-from _node import Node
-from util import iterator_with_progress
+from ._leaf_node import LeafNode
+from ._node import Node
+from .util import iterator_with_progress
 
 class DecisionTree:
 
@@ -13,6 +14,7 @@ class DecisionTree:
         self._impurity = impurity
         self._segmentor = segmentor
         self._max_depth = kwargs.get('max_depth', None)
+        self._min_points = kwargs.get('min_points', None)
         self._root = None
 
     def train(self, data, labels):
@@ -27,9 +29,16 @@ class DecisionTree:
             predictions[i] = self._predict_single(data[i])
         return predictions
 
+    def score(self, data, labels):
+        if not self._root:
+            raise StandardError("Decision tree has not been trained.")
+        predictions = self.predict(data)
+        correct_count = np.count_nonzero(predictions == labels)
+        return round(correct_count / labels.shape[0], 2)
+
     def _predict_single(self, datum):
         cur_node = self._root
-        while type(cur_node) != LeafNode:
+        while not isinstance(cur_node, LeafNode):
             cur_node = cur_node.get_child(datum)
         return cur_node.label
 
@@ -39,19 +48,28 @@ class DecisionTree:
         else:
             sr, left_indices, right_indices = self._segmentor(data, labels, self._impurity)
 
-            left_data, left_labels = data[left_indices], labels[left_indices]
-            right_data, right_labels = data[right_indices], data[right_indices]
+            if not sr:
+                return self._generate_leaf_node(labels)
 
-            return Node(sr, cur_depth + 1,
+            left_data, left_labels = data[left_indices], labels[left_indices]
+            right_data, right_labels = data[right_indices], labels[right_indices]
+
+            next_depth = cur_depth + 1
+
+            node = Node(sr, cur_depth,
                         self._generate_node(left_data, left_labels, next_depth),
                         self._generate_node(right_data, right_labels, next_depth))
+            return node
 
     def _generate_leaf_node(self, labels):
         return LeafNode(mode(labels)[0][0])
 
     def _terminate(self, data, labels, cur_depth):
-        if self.max_depth != None and cur_depth == self._max_depth:
+        if self._max_depth != None and cur_depth == self._max_depth:
             # max depth reached
+            return True
+        elif self._min_points != None and labels.size < self._min_points:
+            # min depth reached
             return True
         elif np.unique(labels).size == 1:
             return True

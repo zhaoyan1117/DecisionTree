@@ -11,7 +11,7 @@ class Node:
         self.right_child = rc
 
     def get_child(self, datum):
-        feature_index, threshhold = sr
+        feature_index, threshhold = self.split_rules
         if datum[feature_index] < threshhold:
             return self.left_child
         else:
