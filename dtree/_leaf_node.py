@@ -4,5 +4,5 @@ import numpy as np
 
 class LeafNode:
 
-    def __init__(self):
-        pass
+    def __init__(self, label):
+        self.label = label
