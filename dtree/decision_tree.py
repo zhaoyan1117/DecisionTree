@@ -5,7 +5,6 @@ import numpy as np
 from scipy.stats import mode
 
 from ._node import Node
-from .util import iterator_with_progress
 
 class DecisionTree:
 
@@ -15,6 +14,8 @@ class DecisionTree:
         self._max_depth = kwargs.get('max_depth', None)
         self._min_points = kwargs.get('min_points', None)
         self._root = None
+        self._nodes = []
+        self._prunned_nodes = []
 
     def train(self, data, labels):
         self._root = self._generate_node(data, labels, 0)
@@ -24,7 +25,7 @@ class DecisionTree:
             raise StandardError("Decision tree has not been trained.")
         size = data.shape[0]
         predictions = np.empty((size,))
-        for i in iterator_with_progress(size):
+        for i in xrange(size):
             predictions[i] = self._predict_single(data[i])
         return predictions
 
@@ -34,6 +35,24 @@ class DecisionTree:
         predictions = self.predict(data)
         correct_count = np.count_nonzero(predictions == labels)
         return round(correct_count / labels.shape[0], 2)
+
+    def prune(self, data, labels):
+        while True:
+            best_score = self.score(data, labels)
+            pruned_node = None
+            for node in self._nodes:
+                if not node.is_leaf:
+                    node.is_leaf = True
+                    cur_score = self.score(data, labels)
+                    if cur_score > best_score:
+                        best_score = cur_score
+                        pruned_node = node
+                    node.is_leaf = False
+            if pruned_node:
+                self._prunned_nodes.append(pruned_node)
+                pruned_node.is_leaf = True
+            else:
+                return best_score
 
     def _predict_single(self, datum):
         cur_node = self._root
@@ -53,14 +72,18 @@ class DecisionTree:
             left_data, left_labels = data[left_indices], labels[left_indices]
             right_data, right_labels = data[right_indices], labels[right_indices]
 
-            return Node(cur_depth, mode(labels)[0][0],
+            node = Node(cur_depth, mode(labels)[0][0],
                         split_rules=sr,
                         left_child=self._generate_node(left_data, left_labels, cur_depth+1),
                         right_child=self._generate_node(right_data, right_labels, cur_depth+1),
                         is_leaf=False)
+            self._nodes.append(node)
+            return node
 
     def _generate_leaf_node(self, cur_depth, labels):
-        return Node(cur_depth, mode(labels)[0][0], is_leaf=True)
+        node = Node(cur_depth, mode(labels)[0][0], is_leaf=True)
+        self._nodes.append(node)
+        return node
 
     def _terminate(self, data, labels, cur_depth):
         if self._max_depth != None and cur_depth == self._max_depth:
