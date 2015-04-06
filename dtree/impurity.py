@@ -23,3 +23,23 @@ class Entropy:
             freq = count/total
             entropy -= freq * log(freq, 2)
         return entropy
+
+class Gini:
+
+    def __call__(self, left_label_hist, right_label_hist):
+        left_bincount, right_bincount = left_label_hist[:,1], right_label_hist[:,1]
+        left_total, right_total = np.sum(left_bincount), np.sum(right_bincount)
+
+        left_entropy = self._cal_gini(left_bincount, left_total)
+        right_entropy = self._cal_gini(right_bincount, right_total)
+
+        total = left_total + right_total
+
+        return (left_total/total) * left_entropy + (right_total/total) * right_entropy
+
+    def _cal_gini(self, bincount, total):
+        gini = 1.0
+        for count in bincount:
+            freq = count/total
+            gini -= freq**2
+        return gini
