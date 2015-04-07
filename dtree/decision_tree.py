@@ -15,7 +15,7 @@ class DecisionTree:
         self._min_samples = kwargs.get('min_samples', 2)
         self._root = None
         self._nodes = []
-        self._prunned_nodes = []
+        self._pruned_nodes = []
 
     def train(self, data, labels):
         self._root = self._generate_node(data, labels, 0)
@@ -49,10 +49,10 @@ class DecisionTree:
                         pruned_node = node
                     node.is_leaf = False
             if pruned_node:
-                self._prunned_nodes.append(pruned_node)
+                self._pruned_nodes.append(pruned_node)
                 pruned_node.is_leaf = True
             else:
-                return best_score
+                return best_score, len(self._pruned_nodes)
 
     def _predict_single(self, datum):
         cur_node = self._root
