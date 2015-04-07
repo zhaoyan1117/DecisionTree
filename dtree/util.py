@@ -1,6 +1,9 @@
 from __future__ import absolute_import
+from __future__ import division
 
 from sys import stdout
+from scipy.stats import itemfreq
+import numpy as np
 
 def iterator_with_progress(n):
     cursor = '.'
@@ -14,3 +17,11 @@ def iterator_with_progress(n):
                 stdout.write('\n')
             stdout.flush()
         yield i
+
+def get_labels_freq(labels, normalize=True):
+    freq = itemfreq(labels)
+    if normalize:
+        total = np.sum(freq[:,1])
+        return dict({label : count/total for label, count in freq})
+    else:
+        return dict({label : count for label, count in freq})

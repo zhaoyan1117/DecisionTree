@@ -4,9 +4,9 @@ import numpy as np
 
 class Node:
 
-    def __init__(self, depth, label, **kwargs):
+    def __init__(self, depth, label_prob, **kwargs):
         self.depth = depth
-        self.label = label
+        self.label_prob = label_prob
         self.is_leaf = kwargs.get('is_leaf', False)
         self._split_rules = kwargs.get('split_rules', None)
         self._left_child = kwargs.get('left_child', None)
@@ -25,6 +25,16 @@ class Node:
             return self.left_child
         else:
             return self.right_child
+
+    def get_label_prob(self, label):
+        return self.label_prob.get(label, 0.0)
+
+    @property
+    def label(self):
+        if not hasattr(self, '_label'):
+            self._label = max(self.label_prob,
+                                        key=lambda label : self.label_prob[label])
+        return self._label
 
     @property
     def split_rules(self):

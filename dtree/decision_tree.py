@@ -4,6 +4,7 @@ from __future__ import division
 import numpy as np
 from scipy.stats import mode
 
+from .util import get_labels_freq
 from ._node import Node
 
 class DecisionTree:
@@ -72,7 +73,7 @@ class DecisionTree:
             left_data, left_labels = data[left_indices], labels[left_indices]
             right_data, right_labels = data[right_indices], labels[right_indices]
 
-            node = Node(cur_depth, mode(labels)[0][0],
+            node = Node(cur_depth, get_labels_freq(labels),
                         split_rules=sr,
                         left_child=self._generate_node(left_data, left_labels, cur_depth+1),
                         right_child=self._generate_node(right_data, right_labels, cur_depth+1),
@@ -81,7 +82,7 @@ class DecisionTree:
             return node
 
     def _generate_leaf_node(self, cur_depth, labels):
-        node = Node(cur_depth, mode(labels)[0][0], is_leaf=True)
+        node = Node(cur_depth, get_labels_freq(labels), is_leaf=True)
         self._nodes.append(node)
         return node
 

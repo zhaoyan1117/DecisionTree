@@ -83,3 +83,25 @@ class ExhaustiveSegmentor(SegmentorBase):
                         right_i,
                         split_rule
                     )
+
+class SubsetSegmentor(SegmentorBase):
+    def __init__(self, msl=1, **kwargs):
+        self._min_samples_leaf = msl
+        self._p = kwargs.get('p', 1.0)
+        assert 0.0 < self._p and self._p <= 1.0
+
+    def _split_generator(self, data):
+        num_features = data.shape[1]
+        feature_indices = np.random.permutation(num_features)
+        selected_feature_indices = feature_indices[:int(num_features*self._p)]
+        for feature_i in selected_feature_indices:
+            feature_values = data[:,feature_i]
+            for value in feature_values:
+                left_i = np.nonzero(feature_values < value)[0]
+                right_i = np.nonzero(feature_values >= value)[0]
+                split_rule = (feature_i, value)
+                yield (
+                        left_i,
+                        right_i,
+                        split_rule
+                    )
