@@ -48,10 +48,12 @@ class RandomForest:
             args_list.append([tree, sampled_data, sampled_labels])
 
         num_processes = cpu_count()
+        pool = Pool(num_processes)
         start = time.time()
         print 'Train in parallel with {0} processes.'.format(num_processes)
-        self._trees = Pool(num_processes).map(train_tree, args_list)
+        self._trees = pool.map(train_tree, args_list)
         print 'Training takes {0} seconds.'.format(int(time.time() - start))
+        pool.close()
 
     def predict(self, data):
         if not self._trees:
@@ -78,11 +80,12 @@ class RandomForest:
             args_list.append([tree, data, labels])
 
         num_processes = cpu_count()
+        pool = Pool(num_processes)
         start = time.time()
         print 'Prune in parallel with {0} processes.'.format(num_processes)
-        self._trees = Pool(num_processes).map(prune_tree, args_list)
+        self._trees = pool.map(prune_tree, args_list)
         print 'Pruning takes {0} seconds.'.format(int(time.time() - start))
-
+        pool.close()
         return self.score(data, labels)
 
     def _sample_data_labels(self, data, labels):
