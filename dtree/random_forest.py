@@ -57,10 +57,10 @@ class RandomForest:
             args_list.append([tree, sampled_data, sampled_labels])
 
         num_processes = cpu_count()
+        print 'Train in parallel with {0} processes.'.format(num_processes)
         pool = Pool(num_processes)
         try:
             start = time.time()
-            print 'Train in parallel with {0} processes.'.format(num_processes)
             self._trees = pool.map(train_tree, args_list)
             print 'Training takes {0} seconds.'.format(int(time.time() - start))
             pool.close()
@@ -96,10 +96,10 @@ class RandomForest:
             args_list.append([tree, data, labels])
 
         num_processes = cpu_count()
+        print 'Prune in parallel with {0} processes.'.format(num_processes)
         pool = Pool(num_processes)
         try:
             start = time.time()
-            print 'Prune in parallel with {0} processes.'.format(num_processes)
             self._trees = pool.map(prune_tree, args_list)
             print 'Pruning takes {0} seconds.'.format(int(time.time() - start))
             pool.close()
