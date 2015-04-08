@@ -2,24 +2,33 @@ from __future__ import absolute_import
 from __future__ import division
 
 from multiprocessing import cpu_count, Pool
-import time
+import time, signal
 
 import numpy as np
 
 from .decision_tree import DecisionTree
 from .util import iterate_with_progress
 
-# Multi-process train funcs.
-def train_tree(args):
-    tree, data, labels = args
-    tree.train(data, labels)
-    return tree
+#################################
+# Multi-process funcs & klasses #
+#################################
+class KeyboardInterruptError(Exception): pass
 
-# Multi-process prune funcs.
+def train_tree(args):
+    try:
+        tree, data, labels = args
+        tree.train(data, labels)
+        return tree
+    except KeyboardInterrupt:
+        raise KeyboardInterruptError()
+
 def prune_tree(args):
-    tree, data, labels = args
-    tree.prune(data, labels)
-    return tree
+    try:
+        tree, data, labels = args
+        tree.prune(data, labels)
+        return tree
+    except KeyboardInterrupt:
+        raise KeyboardInterruptError()
 
 class RandomForest:
 
@@ -49,11 +58,18 @@ class RandomForest:
 
         num_processes = cpu_count()
         pool = Pool(num_processes)
-        start = time.time()
-        print 'Train in parallel with {0} processes.'.format(num_processes)
-        self._trees = pool.map(train_tree, args_list)
-        print 'Training takes {0} seconds.'.format(int(time.time() - start))
-        pool.close()
+        try:
+            start = time.time()
+            print 'Train in parallel with {0} processes.'.format(num_processes)
+            self._trees = pool.map(train_tree, args_list)
+            print 'Training takes {0} seconds.'.format(int(time.time() - start))
+            pool.close()
+        except KeyboardInterrupt:
+            pool.terminate()
+        except Exception, e:
+            pool.terminate()
+        finally:
+            pool.join()
 
     def predict(self, data):
         if not self._trees:
@@ -81,12 +97,19 @@ class RandomForest:
 
         num_processes = cpu_count()
         pool = Pool(num_processes)
-        start = time.time()
-        print 'Prune in parallel with {0} processes.'.format(num_processes)
-        self._trees = pool.map(prune_tree, args_list)
-        print 'Pruning takes {0} seconds.'.format(int(time.time() - start))
-        pool.close()
-        return self.score(data, labels)
+        try:
+            start = time.time()
+            print 'Prune in parallel with {0} processes.'.format(num_processes)
+            self._trees = pool.map(prune_tree, args_list)
+            print 'Pruning takes {0} seconds.'.format(int(time.time() - start))
+            pool.close()
+            return self.score(data, labels)
+        except KeyboardInterrupt:
+            pool.terminate()
+        except Exception, e:
+            pool.terminate()
+        finally:
+            pool.join()
 
     def _sample_data_labels(self, data, labels):
         if self._boost_p == 1.0:
