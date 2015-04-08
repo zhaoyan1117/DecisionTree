@@ -5,18 +5,20 @@ from sys import stdout
 from scipy.stats import itemfreq
 import numpy as np
 
-def iterator_with_progress(n):
+def iterate_with_progress(collections):
     cursor = '.'
     last_percent = -1
-    for i in xrange(n):
-        cur_percent = int(100.0 * (i+1) / n)
+    length = len(collections)
+
+    for index, item in enumerate(collections):
+        cur_percent = int(100.0 * ((index+1) / length))
         if cur_percent > last_percent:
             last_percent = cur_percent
             stdout.write('\r' + cursor * cur_percent + " %d%%" % cur_percent)
             if cur_percent == 100:
                 stdout.write('\n')
             stdout.flush()
-        yield i
+        yield item
 
 def get_labels_freq(labels, normalize=True):
     freq = itemfreq(labels)

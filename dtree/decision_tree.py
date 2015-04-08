@@ -21,13 +21,14 @@ class DecisionTree:
     def train(self, data, labels):
         self._root = self._generate_node(data, labels, 0)
 
-    def predict(self, data):
+    def predict(self, data, distribution=False):
         if not self._root:
             raise StandardError("Decision tree has not been trained.")
         size = data.shape[0]
-        predictions = np.empty((size,))
+        return_type = np.object if distribution else np.float64
+        predictions = np.empty((size,), dtype=return_type)
         for i in xrange(size):
-            predictions[i] = self._predict_single(data[i])
+            predictions[i] = self._predict_single(data[i], distribution)
         return predictions
 
     def score(self, data, labels):
@@ -35,7 +36,7 @@ class DecisionTree:
             raise StandardError("Decision tree has not been trained.")
         predictions = self.predict(data)
         correct_count = np.count_nonzero(predictions == labels)
-        return round(correct_count / labels.shape[0], 2)
+        return correct_count / labels.shape[0]
 
     def prune(self, data, labels):
         while True:
@@ -55,11 +56,14 @@ class DecisionTree:
             else:
                 return best_score, len(self._pruned_nodes)
 
-    def _predict_single(self, datum):
+    def _predict_single(self, datum, distribution):
         cur_node = self._root
         while not cur_node.is_leaf:
             cur_node = cur_node.get_child(datum)
-        return cur_node.label
+        if distribution:
+            return cur_node.label_prob
+        else:
+            return cur_node.label
 
     def _generate_node(self, data, labels, cur_depth):
         if self._terminate(data, labels, cur_depth):

@@ -26,9 +26,6 @@ class Node:
         else:
             return self.right_child
 
-    def get_label_prob(self, label):
-        return self.label_prob.get(label, 0.0)
-
     @property
     def label(self):
         if not hasattr(self, '_label'):
