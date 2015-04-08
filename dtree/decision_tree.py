@@ -2,7 +2,6 @@ from __future__ import absolute_import
 from __future__ import division
 
 import numpy as np
-from scipy.stats import mode
 
 from .util import get_labels_freq
 from ._node import Node

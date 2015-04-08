@@ -5,7 +5,6 @@ from multiprocessing import cpu_count, Pool
 import time
 
 import numpy as np
-from scipy.stats import mode
 
 from .decision_tree import DecisionTree
 from .util import iterate_with_progress
