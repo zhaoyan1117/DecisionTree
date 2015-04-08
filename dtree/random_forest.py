@@ -1,10 +1,26 @@
 from __future__ import absolute_import
 from __future__ import division
 
+from multiprocessing import cpu_count, Pool
+import time
+
 import numpy as np
 from scipy.stats import mode
+
 from .decision_tree import DecisionTree
 from .util import iterate_with_progress
+
+# Multi-process train funcs.
+def train_tree(args):
+    tree, data, labels = args
+    tree.train(data, labels)
+    return tree
+
+# Multi-process prune funcs.
+def prune_tree(args):
+    tree, data, labels = args
+    tree.prune(data, labels)
+    return tree
 
 class RandomForest:
 
@@ -21,14 +37,22 @@ class RandomForest:
 
     def train(self, data, labels):
         self._klasses = np.unique(labels)
+
+        print 'Prepare parallel training.'
+        args_list = []
         for _ in iterate_with_progress(xrange(self._num_trees)):
             sampled_data, sampled_labels = self._sample_data_labels(data, labels)
             tree = DecisionTree(self._impurity,
                                 self._segmentor,
                                 max_depth=self._max_depth,
                                 min_samples=self._min_samples)
-            tree.train(sampled_data, sampled_labels)
-            self._trees.append(tree)
+            args_list.append([tree, sampled_data, sampled_labels])
+
+        num_processes = cpu_count()
+        start = time.time()
+        print 'Train in parallel with {0} processes.'.format(num_processes)
+        self._trees = Pool(num_processes).map(train_tree, args_list)
+        print 'Training takes {0} seconds.'.format(int(time.time() - start))
 
     def predict(self, data):
         if not self._trees:
@@ -50,8 +74,16 @@ class RandomForest:
         return correct_count / labels.shape[0]
 
     def prune(self, data, labels):
-        for tree in iterate_with_progress(self._trees):
-            tree.prune(data, labels)
+        args_list = []
+        for tree in self._trees:
+            args_list.append([tree, data, labels])
+
+        num_processes = cpu_count()
+        start = time.time()
+        print 'Prune in parallel with {0} processes.'.format(num_processes)
+        self._trees = Pool(num_processes).map(prune_tree, args_list)
+        print 'Pruning takes {0} seconds.'.format(int(time.time() - start))
+
         return self.score(data, labels)
 
     def _sample_data_labels(self, data, labels):
