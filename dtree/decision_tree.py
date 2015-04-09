@@ -18,13 +18,14 @@ class DecisionTree:
         self._pruned_nodes = []
 
     def train(self, data, labels):
+        self._klasses = np.unique(labels)
         self._root = self._generate_node(data, labels, 0)
 
     def predict(self, data, distribution=False):
         if not self._root:
             raise StandardError("Decision tree has not been trained.")
         size = data.shape[0]
-        return_type = np.object if distribution else np.float64
+        return_type = np.object if distribution else self._klasses.dtype
         predictions = np.empty((size,), dtype=return_type)
         for i in xrange(size):
             predictions[i] = self._predict_single(data[i], distribution)
