@@ -35,8 +35,6 @@ class RandomForest:
     def __init__(self, impurity, segmentor, **kwargs):
         self._impurity = impurity
         self._segmentor = segmentor
-        self._boost_p = kwargs.get('boost_p', 0.5)
-        assert 0.0 < self._boost_p and self._boost_p <= 1.0
         self._num_trees = kwargs.get('num_trees', 10)
         assert self._num_trees > 0
         self._max_depth = kwargs.get('max_depth', None)
@@ -112,14 +110,9 @@ class RandomForest:
             pool.join()
 
     def _sample_data_labels(self, data, labels):
-        if self._boost_p == 1.0:
-            return data, labels
-
-        num_data = data.shape[0]
+        num_data = len(data)
         assert num_data == len(labels)
-        data_indices = np.random.permutation(num_data)
-        num_data_sampled = int(num_data * self._boost_p)
-        sampled_data = data[data_indices[:num_data_sampled],:]
-        sampled_labels = labels[data_indices[:num_data_sampled]]
-
+        data_indices = np.random.choice(num_data, num_data)
+        sampled_data = data[data_indices,:]
+        sampled_labels = labels[data_indices]
         return sampled_data, sampled_labels
