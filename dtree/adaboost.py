@@ -1,11 +1,27 @@
 from __future__ import absolute_import
 from __future__ import division
 
+from multiprocessing import cpu_count, Pool
+import time, signal
+
 import numpy as np
 import random, math
 
 from .decision_tree import DecisionTree
 from .util import iterate_with_progress, normalize_values
+
+#################################
+# Multi-process funcs & klasses #
+#################################
+class KeyboardInterruptError(Exception): pass
+
+def prune_tree(args):
+    try:
+        tree, data, labels = args
+        tree.prune(data, labels)
+        return tree
+    except KeyboardInterrupt:
+        raise KeyboardInterruptError()
 
 class AdaBoost:
 
@@ -50,11 +66,9 @@ class AdaBoost:
         if not self._trees:
             raise StandardError("AdaBoost has not been trained.")
         def weight(results):
+            results[np.nonzero(results == 0)[0]] = -1
             strong_result = np.dot(self._alphas, results)
-            if strong_result >= 0:
-                return 1
-            else:
-                return 0
+            return int(strong_result >= 0)
         tree_results = np.array([tree.predict(data) for tree in self._trees])
         return np.apply_along_axis(weight, 0, tree_results)
 
@@ -64,6 +78,27 @@ class AdaBoost:
         predictions = self.predict(data)
         correct_count = np.count_nonzero(predictions == labels)
         return correct_count / len(labels)
+
+    def prune(self, data, labels):
+        args_list = []
+        for tree in self._trees:
+            args_list.append([tree, data, labels])
+
+        num_processes = cpu_count()
+        print 'Prune in parallel with {0} processes.'.format(num_processes)
+        pool = Pool(num_processes)
+        try:
+            start = time.time()
+            self._trees = pool.map(prune_tree, args_list)
+            print 'Pruning takes {0} seconds.'.format(int(time.time() - start))
+            pool.close()
+            return self.score(data, labels)
+        except KeyboardInterrupt:
+            pool.terminate()
+        except Exception, e:
+            pool.terminate()
+        finally:
+            pool.join()
 
     def _sample_data_labels(self, data, labels, distributions):
         if not sum(distributions.itervalues()) == 1.0:
